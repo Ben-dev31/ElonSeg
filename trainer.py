@@ -83,7 +83,7 @@ def run_tasks(**kwargs):
         check_working_directory(ws_path)
 
         print("Loading Eloncam dataset...")
-        save_config(Config, os.path.join(ws_path, 'config.json'))
+        save_config(Config.copy(), os.path.join(ws_path, 'config.json'))
 
         eloncam_data = Config.get("eloncam_data", '')
         eloncam_grundtrue = Config.get("eloncam_grundtrue", '')

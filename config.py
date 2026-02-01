@@ -26,6 +26,7 @@ def save_config(config: dict, path: str):
     with open(path, 'w') as f:
         json.dump(config, f, indent=4)
 
+
 def load_config(path: str) -> dict:
     """ Load configuration from a file 
     Args:
