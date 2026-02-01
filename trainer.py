@@ -78,7 +78,7 @@ def run_tasks(**kwargs):
     exist_data = get_existing_data(dest_path=os.path.join(ws_path, 'dataset'))
     if exist_data:
         print("Existing dataset found. Skipping data loading.")
-        Config = load_config(os.path.join(ws_path, 'config.json'))
+        Config.update(load_config(os.path.join(ws_path, 'config.json')))
     else:
         check_working_directory(ws_path)
 
