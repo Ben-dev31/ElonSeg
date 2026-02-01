@@ -12,7 +12,7 @@ Config = {
         "epochs": 50,
         "batch_size": 15,
         "target_size": (256, 256),
-        "learning_rate": 1e-4,
+        "learning_rate": 1e-3,
     },
 }
 
