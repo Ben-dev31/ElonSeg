@@ -1,4 +1,5 @@
 
+import logging
 from config import Config, save_config, load_config
 import os, pathlib 
 from dataset.load_eloncam_data import *
@@ -113,6 +114,7 @@ def run_tasks(**kwargs):
 
 if __name__ == "__main__":
     import argparse
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     
     parseur = argparse.ArgumentParser(description="Run training tasks.")
     parseur.add_argument('--ws_path', type=str, default='.',

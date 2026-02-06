@@ -188,6 +188,7 @@ class TrainableUNet:
                     save_dir: str = "./checkpoints", save_history_path: str = "training_history.json"):
         """
         Entraîne le modèle sur un DataLoader contenant des couples (image, masque).
+        Sauvegarde automatiquement le meilleur modèle (écart minimum entre train et validation).
 
         Args:
             train_loader : torch.utils.data.DataLoader
@@ -200,6 +201,9 @@ class TrainableUNet:
 
         save_dir = Path(save_dir)
         save_dir.mkdir(parents=True, exist_ok=True)
+
+        best_gap = float('inf')
+        best_epoch = None
 
         for epoch in range(epochs):
             self.model.train()
@@ -218,9 +222,12 @@ class TrainableUNet:
 
             epoch_loss_avg = epoch_loss / max(1, n_batches)
             val_loss = self.validate(val_loader, criterion)
+            gap = abs(epoch_loss_avg - val_loss)
+            
             # append averaged epoch metrics
             self.history.setdefault('loss', []).append(epoch_loss_avg)
             self.history.setdefault('val_loss', []).append(val_loss)
+            self.history.setdefault('gap', []).append(gap)
 
             # checkpoint dict (save model + optimizer + epoch)
             ckpt_path = save_dir / f"unet_epoch{epoch+1}.pth"
@@ -230,9 +237,23 @@ class TrainableUNet:
                 'optimizer_state': optimizer.state_dict()
             }, ckpt_path)
 
-            logging.info(f"Epoch {epoch+1}/{epochs} - Loss: {epoch_loss_avg:.4f} - Val Loss: {val_loss:.4f}")
+            # save best model based on minimum gap
+            if gap < best_gap:
+                best_gap = gap
+                best_epoch = epoch + 1
+                best_ckpt_path = save_dir / "unet_best.pth"
+                torch.save({
+                    'epoch': epoch+1,
+                    'model_state': self.model.state_dict(),
+                    'optimizer_state': optimizer.state_dict(),
+                    'gap': gap
+                }, best_ckpt_path)
+                logging.info(f"✓ Best model saved at epoch {epoch+1} with gap: {gap:.4f}")
+
+            logging.info(f"Epoch {epoch+1}/{epochs} - Loss: {epoch_loss_avg:.4f} - Val Loss: {val_loss:.4f} - Gap: {gap:.4f}")
 
         logging.info("Entraînement terminé.")
+        logging.info(f"Best model: epoch {best_epoch} with gap {best_gap:.4f}")
         # save history as JSON for human-readability
         self.save_history(self.history, save_history_path)
     
