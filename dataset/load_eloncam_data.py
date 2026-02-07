@@ -148,6 +148,7 @@ def save_dataset(image_paths: list, dest_image_path: str,groundtrue_files: list,
 def create_dataset(dest_path: str, image_path: str,
                     grundtruth_path:str, 
                     ext: str = ".tiff",
+                    test_size: float = 0.2,
                     val_size: float = 0.4):
     
     """
@@ -166,8 +167,9 @@ def create_dataset(dest_path: str, image_path: str,
     if len(missing_gimages) > 0:
       print(f"Missing grundtruth images for: {missing_gimages}")
 
-    trainset, valset = train_test_split(image_paths, test_size=val_size, random_state=42)
-   
+    data, testset = train_test_split(image_paths, test_size=test_size, random_state=42)
+    trainset, valset = train_test_split(data, test_size=val_size, random_state=42)
+
     save_dataset(trainset, dest_path, 
                  os.listdir(grundtruth_path), 
                  grundtruth_path,
@@ -179,6 +181,13 @@ def create_dataset(dest_path: str, image_path: str,
                  grundtruth_path,
                  mask = 'hsv',
                  data_type = 'val')
+
+    save_dataset(testset, dest_path, 
+                 os.listdir(grundtruth_path),
+                  grundtruth_path,
+                  mask = 'hsv',
+                  data_type = 'test')
+    
 
 if __name__ == "__main__":
     create_dataset(dest_path = './data',

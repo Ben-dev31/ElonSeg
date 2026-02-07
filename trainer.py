@@ -3,7 +3,9 @@ import logging
 from config import Config, save_config, load_config
 import os, pathlib 
 from dataset.load_eloncam_data import *
+from metrics import dice_coeff, iou_score
 from train_model import run_full_train
+from model_test import run_prediction
 from plot_loss import plot_loss, load_loss_history
 
 def check_working_directory(ws_path: str):
@@ -24,17 +26,25 @@ def check_working_directory(ws_path: str):
     #src.joinpath('logs').mkdir(parents=True, exist_ok=True)
     data_path = src.joinpath('dataset') 
     data_path.mkdir(parents=True, exist_ok=True)
+
     Config["data_path"] = str(data_path)
     train_path = data_path.joinpath('train')
     val_path = data_path.joinpath('val')
+    test_path = data_path.joinpath('test')
     train_path.mkdir(parents=True, exist_ok=True)
     val_path.mkdir(parents=True, exist_ok=True)
+    test_path.mkdir(parents=True, exist_ok=True)
     train_path.joinpath('images').mkdir(parents=True, exist_ok=True)
     train_path.joinpath('masks').mkdir(parents=True, exist_ok=True)
     val_path.joinpath('images').mkdir(parents=True, exist_ok=True)
     val_path.joinpath('masks').mkdir(parents=True, exist_ok=True)
+    test_path.joinpath('images').mkdir(parents=True, exist_ok=True)
+    test_path.joinpath('masks').mkdir(parents=True, exist_ok=True)
     Config["train_path"] = str(train_path)
     Config["val_path"] = str(val_path)
+    Config["test_path"] = str(test_path)
+    Config["test_images_dir"] = str(test_path.joinpath('images'))
+    Config["test_masks_dir"] = str(test_path.joinpath('masks'))
     Config["model_path"] = str(src.joinpath('checkpoints'))
 
 def get_existing_data(dest_path: str):
@@ -99,16 +109,46 @@ def run_tasks(**kwargs):
                    train_dir=Config.get("train_path", './data/train'),
                    val_dir=Config.get("val_path", './data/val'),
                    target_size=Config.get("train_params", {}).get("target_size", (256, 256)),
+                    lr=Config.get("train_params", {}).get("learning_rate", 1e-4),
                    save_dir=Config.get("model_path", './model_checkpoints'),
                    history_path=os.path.join(ws_path, 'training_history.json'))
 
-    print("Plotting training history...")
+    logging.info("Plotting training history...")
     history = load_loss_history(os.path.join(ws_path, 'training_history.json'))
     plot_loss(history[0], history[1],
               out_path=os.path.join(ws_path, 'loss_plot.png'),
                 metric_name='dice')
     
-    print("All tasks completed.")
+
+    logging.info("Running prediction and evaluation...")
+    
+    run_prediction(
+        model_path=os.path.join(Config.get("model_path", './model_checkpoints'), 'unet_best.pth'),
+        images_dir=Config.get("test_images_dir", './data/test/images'),
+        out_masks_dir=os.path.join(ws_path, 'test_output'),
+        target_size=tuple(Config.get("test_params", {}).get("target_size", (256, 256))),
+        threshold=Config.get("test_params", {}).get("threshold", 0.5),
+        history_path=os.path.join(ws_path, 'best_prediction_history.json'),
+        metrics={
+            'dice': dice_coeff,
+            'iou': iou_score
+        }
+    )
+    run_prediction(
+        model_path=os.path.join(Config.get("model_path", './model_checkpoints'), 'unet_last_epoch.pth'),
+        images_dir=Config.get("test_images_dir", './data/test/images'),
+        out_masks_dir=os.path.join(ws_path, 'test_output'),
+        target_size=tuple(Config.get("test_params", {}).get("target_size", (256, 256))),
+        threshold=Config.get("test_params", {}).get("threshold", 0.5),
+        history_path=os.path.join(ws_path, 'last_epoch_prediction_history.json'),
+        metrics={
+            'dice': dice_coeff,
+            'iou': iou_score
+        }
+    )
+    logging.info("Prediction and evaluation completed. Results saved to history.")
+
+    logging.info("All tasks completed.")
 
 
 
@@ -128,6 +168,9 @@ if __name__ == "__main__":
                         help='Number of training epochs')
     parseur.add_argument('--batch_size', type=int, default=15,
                         help='Training batch size')
+    parseur.add_argument('--learning_rate', type=float, default=1e-4,
+                        help='Learning rate for training')
+    
     
     
     args = parseur.parse_args()
@@ -137,5 +180,6 @@ if __name__ == "__main__":
         Config["eloncam_grundtrue"] = args.eloncam_grundtrue
     Config["train_params"]["epochs"] = args.epochs
     Config["train_params"]["batch_size"] = args.batch_size
+    Config["train_params"]["learning_rate"] = args.learning_rate
 
     run_tasks(ws_path=args.ws_path)

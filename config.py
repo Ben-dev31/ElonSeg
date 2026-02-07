@@ -14,6 +14,13 @@ Config = {
         "target_size": (256, 256),
         "learning_rate": 1e-3,
     },
+    "test_images_dir": './data/test/images',
+    "test_masks_dir": './data/test/masks',
+    "test_params": {
+        "batch_size": 5,
+        "target_size": (256, 256),
+        "threshold": 0.5
+    },
 }
 
 def save_config(config: dict, path: str):
