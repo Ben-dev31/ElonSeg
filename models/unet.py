@@ -230,14 +230,14 @@ class TrainableUNet:
             self.history.setdefault('gap', []).append(gap)
 
             # checkpoint dict (save model + optimizer + epoch)
-            """
-            ckpt_path = save_dir / f"unet_epoch{epoch+1}.pth"
+           
+            ckpt_path = save_dir / "unet_last_epoch.pth"
             torch.save({
                 'epoch': epoch+1,
                 'model_state': self.model.state_dict(),
                 'optimizer_state': optimizer.state_dict()
             }, ckpt_path)
-            """
+            
             # save best model based on minimum gap
             if gap < best_gap:
                 best_gap = gap
