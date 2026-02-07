@@ -230,13 +230,14 @@ class TrainableUNet:
             self.history.setdefault('gap', []).append(gap)
 
             # checkpoint dict (save model + optimizer + epoch)
+            """
             ckpt_path = save_dir / f"unet_epoch{epoch+1}.pth"
             torch.save({
                 'epoch': epoch+1,
                 'model_state': self.model.state_dict(),
                 'optimizer_state': optimizer.state_dict()
             }, ckpt_path)
-
+            """
             # save best model based on minimum gap
             if gap < best_gap:
                 best_gap = gap
@@ -252,7 +253,6 @@ class TrainableUNet:
 
             logging.info(f"Epoch {epoch+1}/{epochs} - Loss: {epoch_loss_avg:.4f} - Val Loss: {val_loss:.4f} - Gap: {gap:.4f}")
 
-        logging.info("Entraînement terminé.")
         logging.info(f"Best model: epoch {best_epoch} with gap {best_gap:.4f}")
         # save history as JSON for human-readability
         self.save_history(self.history, save_history_path)
@@ -281,7 +281,7 @@ class TrainableUNet:
                 val_loss += loss.item()
                 n_batches += 1
         avg = val_loss / max(1, n_batches)
-        logging.debug(f"Validation - Avg loss: {avg:.4f}")
+        logging.info(f"Validation - Avg loss: {avg:.4f}")
         return avg
     
     def prepare_image(self, image_input, color_order: str = 'RGB') -> torch.Tensor:
