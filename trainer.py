@@ -137,7 +137,7 @@ def run_tasks(**kwargs):
     run_prediction(
         model_path=os.path.join(Config.get("model_path", './model_checkpoints'), 'unet_last_epoch.pth'),
         images_dir=Config.get("test_images_dir", './data/test/images'),
-        out_masks_dir=os.path.join(ws_path, 'test_output'),
+        out_masks_dir=os.path.join(ws_path, 'test_output2'),
         target_size=tuple(Config.get("test_params", {}).get("target_size", (256, 256))),
         threshold=Config.get("test_params", {}).get("threshold", 0.5),
         history_path=os.path.join(ws_path, 'last_epoch_prediction_history.json'),
