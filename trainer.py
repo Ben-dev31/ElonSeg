@@ -29,11 +29,11 @@ def check_working_directory(ws_path: str):
     train_path = data_path.joinpath('train')
     val_path = data_path.joinpath('val')
     test_path = data_path.joinpath('test')
+    Config["test_images_dir"] = str(test_path.joinpath('images'))
+    Config["test_masks_dir"] = str(test_path.joinpath('masks'))
     Config["train_path"] = str(train_path)
     Config["val_path"] = str(val_path)
     Config["test_path"] = str(test_path)
-    Config["test_images_dir"] = str(test_path.joinpath('images'))
-    Config["test_masks_dir"] = str(test_path.joinpath('masks'))
     Config["model_path"] = str(src.joinpath('checkpoints'))
     Config["data_path"] = str(data_path)
 
