@@ -24,22 +24,12 @@ def check_working_directory(ws_path: str):
     src = pathlib.Path(working_directory)
     src.joinpath('checkpoints').mkdir(parents=True, exist_ok=True)
     #src.joinpath('logs').mkdir(parents=True, exist_ok=True)
-    data_path = src.joinpath('dataset') 
-    data_path.mkdir(parents=True, exist_ok=True)
-
+    data_path = Config.get("dataset_src", src.joinpath('dataset'))
+  
     Config["data_path"] = str(data_path)
     train_path = data_path.joinpath('train')
     val_path = data_path.joinpath('val')
     test_path = data_path.joinpath('test')
-    train_path.mkdir(parents=True, exist_ok=True)
-    val_path.mkdir(parents=True, exist_ok=True)
-    test_path.mkdir(parents=True, exist_ok=True)
-    train_path.joinpath('images').mkdir(parents=True, exist_ok=True)
-    train_path.joinpath('masks').mkdir(parents=True, exist_ok=True)
-    val_path.joinpath('images').mkdir(parents=True, exist_ok=True)
-    val_path.joinpath('masks').mkdir(parents=True, exist_ok=True)
-    test_path.joinpath('images').mkdir(parents=True, exist_ok=True)
-    test_path.joinpath('masks').mkdir(parents=True, exist_ok=True)
     Config["train_path"] = str(train_path)
     Config["val_path"] = str(val_path)
     Config["test_path"] = str(test_path)
@@ -86,9 +76,11 @@ def run_tasks(**kwargs):
     print("checking working directory...")
 
     ws_path = kwargs.get("ws_path", '.')
+    check_working_directory(ws_path=ws_path)
+    
     if kwargs.get("dataset_src", None) is not None:
         Config["dataset_src"] = kwargs.get("dataset_src")
-        
+
     exist_data = get_existing_data(dest_path= kwargs.get("dataset_src", ws_path + '/dataset'))
     if exist_data:
         print("Existing dataset found. Skipping data loading.")
