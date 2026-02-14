@@ -24,7 +24,7 @@ def check_working_directory(ws_path: str):
     src = pathlib.Path(working_directory)
     src.joinpath('checkpoints').mkdir(parents=True, exist_ok=True)
     #src.joinpath('logs').mkdir(parents=True, exist_ok=True)
-    data_path = Config.get("dataset_src", src.joinpath('dataset'))
+    data_path = pathlib.Path(Config.get("dataset_src", src.joinpath('dataset')))
   
     Config["data_path"] = str(data_path)
     train_path = data_path.joinpath('train')
@@ -77,7 +77,7 @@ def run_tasks(**kwargs):
 
     ws_path = kwargs.get("ws_path", '.')
     check_working_directory(ws_path=ws_path)
-    
+
     if kwargs.get("dataset_src", None) is not None:
         Config["dataset_src"] = kwargs.get("dataset_src")
 
