@@ -127,29 +127,29 @@ def save_dataset(image_paths: list, dest_image_path: str,groundtrue_files: list,
                  data_type = 'train',): 
                  
    for fil in tqdm(image_paths, desc=f"Prosessing images"):
-    name = os.path.basename(fil)
-    if name in groundtrue_files:
-        masks_image = load_images(os.path.join(groundtrue_src, name))
-        imagette = decouper_image(masks_image, 4)
-        for j, im in enumerate(imagette[4:-4]):
-            if mask == 'hsv':
-                im_mask = get_mask_from_hsv(im)
-                cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/masks/{name}_{j}.png"), im_mask)
+      name = os.path.basename(fil)
+      if name in groundtrue_files:
+          masks_image = load_images(os.path.join(groundtrue_src, name))
+          imagette = decouper_image(masks_image, 4)
+          for j, im in enumerate(imagette[4:-4]):
+              if mask == 'hsv':
+                  im_mask = get_mask_from_hsv(im)
+                  cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/masks/{name}_{j}.png"), im_mask)
 
 
-        image = crop_images(fil,ext="tiff",
-                    isdir = False, output_size=(masks_image.shape[0],masks_image.shape[1]))
-        imagette = decouper_image(image, 4)
-        for i, im in enumerate(imagette[4:-4]):
-            cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/images/{name}_{i}.png"), im)
-    else:
-        print(fil)
+          image = crop_images(fil,ext="tiff",
+                      isdir = False, output_size=(masks_image.shape[0],masks_image.shape[1]))
+          imagette = decouper_image(image, 4)
+          for i, im in enumerate(imagette[4:-4]):
+              cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/images/{name}_{i}.png"), im)
+      else:
+          print(fil, groundtrue_src)
 
 def create_dataset(dest_path: str, image_path: str,
                     grundtruth_path:str, 
                     ext: str = ".tiff",
-                    test_size: float = 0.1,
-                    val_size: float = 0.4):
+                    test_size: float = 0.15,
+                    val_size: float = 0.3):
     
     """
     Create dataset from eloncam data and groundtruth

@@ -5,8 +5,8 @@ Config = {
     "data_path": './data',
     "train_path": './data/train',
     "val_path": './data/val',
-    "eloncam_data": 'C:\\Users\\DELL\\Desktop\\Stage\\package\\data\\brute',
-    "eloncam_grundtrue": 'C:\\Users\\DELL\\Desktop\\Stage\\package\\data\\grund',
+    "eloncam_data": '',
+    "eloncam_grundtrue": '',
     "model_path": './model_checkpoints',
     "train_params": {
         "epochs": 50,
@@ -22,6 +22,13 @@ Config = {
         "threshold": 0.5
     },
 }
+
+def update_config(updates: dict):
+    """ Update the global configuration with new values 
+    Args:
+        updates (dict): Dictionary containing the configuration updates
+    """
+    Config.update(updates)
 
 def save_config(config: dict, path: str):
     """ Save configuration to a file 

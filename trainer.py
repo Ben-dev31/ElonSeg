@@ -86,21 +86,16 @@ def run_tasks(**kwargs):
     print("checking working directory...")
 
     ws_path = kwargs.get("ws_path", '.')
-    exist_data = get_existing_data(dest_path=os.path.join(ws_path, 'dataset'))
+    if kwargs.get("dataset_src", None) is not None:
+        Config["dataset_src"] = kwargs.get("dataset_src")
+        
+    exist_data = get_existing_data(dest_path= kwargs.get("dataset_src", ws_path + '/dataset'))
     if exist_data:
         print("Existing dataset found. Skipping data loading.")
         Config.update(load_config(os.path.join(ws_path, 'config.json')))
     else:
-        check_working_directory(ws_path)
-
-        print("Loading Eloncam dataset...")
-        save_config(Config.copy(), os.path.join(ws_path, 'config.json'))
-
-        eloncam_data = Config.get("eloncam_data", '')
-        eloncam_grundtrue = Config.get("eloncam_grundtrue", '')
-        if eloncam_data != '' and eloncam_grundtrue != '':
-            load_data(eloncam_data, eloncam_grundtrue,
-                    dest_path=Config.get("data_path", './data'))
+        logging.error("No existing dataset found. Please load data before training.")
+        return
     
     print("Starting training...")
     run_full_train(root=Config.get("data_path", './data'),
@@ -171,6 +166,9 @@ if __name__ == "__main__":
     parseur.add_argument('--learning_rate', type=float, default=1e-4,
                         help='Learning rate for training')
     
+    parseur.add_argument('--dataset_src', type=str, default=None,
+                        help='Path to existing dataset (if any)')
+    
     
     
     args = parseur.parse_args()
@@ -182,4 +180,4 @@ if __name__ == "__main__":
     Config["train_params"]["batch_size"] = args.batch_size
     Config["train_params"]["learning_rate"] = args.learning_rate
 
-    run_tasks(ws_path=args.ws_path)
+    run_tasks(ws_path=args.ws_path, dataset_src=args.dataset_src)
