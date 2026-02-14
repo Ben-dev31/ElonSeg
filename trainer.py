@@ -8,6 +8,8 @@ from train_model import run_full_train
 from model_test import run_prediction
 from plot_loss import plot_loss, load_loss_history
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def check_working_directory(ws_path: str):
     """ Check and create working directory structure 
     Args:

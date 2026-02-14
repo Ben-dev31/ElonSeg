@@ -15,7 +15,7 @@ def run_full_train(root='./data', epochs=1, batch_size=2, lr=1e-4, device=None,
                     history_path: str = "training_history.json"):
     
     device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
-    logging.info(f"Starting train on device: {device}")
+    print(f"Starting train on device: {device}")
 
     if not train_dir or not val_dir:
         raise ValueError("When use_real=True you must provide --train-dir and --val-dir paths.")
