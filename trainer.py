@@ -26,7 +26,6 @@ def check_working_directory(ws_path: str):
     #src.joinpath('logs').mkdir(parents=True, exist_ok=True)
     data_path = pathlib.Path(Config.get("dataset_src", src.joinpath('dataset')))
   
-    Config["data_path"] = str(data_path)
     train_path = data_path.joinpath('train')
     val_path = data_path.joinpath('val')
     test_path = data_path.joinpath('test')
@@ -36,6 +35,7 @@ def check_working_directory(ws_path: str):
     Config["test_images_dir"] = str(test_path.joinpath('images'))
     Config["test_masks_dir"] = str(test_path.joinpath('masks'))
     Config["model_path"] = str(src.joinpath('checkpoints'))
+    Config["data_path"] = str(data_path)
 
 def get_existing_data(dest_path: str):
     """ Check for existing data in the specified directory 
