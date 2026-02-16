@@ -8,7 +8,6 @@ from train_model import run_full_train
 from model_test import run_prediction
 from plot_loss import plot_loss, load_loss_history
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def check_working_directory(ws_path: str):
     """ Check and create working directory structure 
@@ -153,14 +152,14 @@ if __name__ == "__main__":
     parseur.add_argument('--eloncam_grundtrue', type=str, default='',
                         help='Path to Eloncam groundtruth directory')
     
-    parseur.add_argument('--epochs', type=int, default=50,
+    parseur.add_argument('--epochs', type=int, default=100,
                         help='Number of training epochs')
     parseur.add_argument('--batch_size', type=int, default=15,
                         help='Training batch size')
     parseur.add_argument('--learning_rate', type=float, default=1e-4,
                         help='Learning rate for training')
     
-    parseur.add_argument('--dataset_src', type=str, default=None,
+    parseur.add_argument('--dataset_src', type=str, default="./dataset",
                         help='Path to existing dataset (if any)')
     
     

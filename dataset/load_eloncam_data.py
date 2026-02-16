@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
+from .mat import distance_map
 
 def load_images_path(path:str, ext:str = "tiff"):
   """
@@ -49,6 +50,10 @@ def get_mask_from_hsv(image:np.ndarray) :
   hsv = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2HSV)
   s_im = hsv[:,:,1]
   return s_im 
+
+def get_mask_from_map(image:np.ndarray) :
+  mask = distance_map(image)
+  return mask
 
 def decouper_image(image, n, image_size = None):
     """
@@ -96,12 +101,12 @@ def load_images(path:str, extention = '.tiff'):
   images = []
   if not os.path.isdir(path):
     image = cv2.imread(path)
-    return image
+    return image.astype(np.float32)
   else:
     for file in os.listdir(path):
       if file.endswith(extention):
         image = cv2.imread(os.path.join(path, file))
-        images.append(image)
+        images.append(image.astype(np.float32))
     return images
 
 def get_image_paths(image_path: str, grundtruth_path: str = None, ext: str = ".tiff"):
@@ -135,7 +140,9 @@ def save_dataset(image_paths: list, dest_image_path: str,groundtrue_files: list,
               if mask == 'hsv':
                   im_mask = get_mask_from_hsv(im)
                   cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/masks/{name}_{j}.png"), im_mask)
-
+              elif mask == 'map':
+                  im_mask = get_mask_from_map(im)
+                  cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/masks/{name}_{j}.tiff"), im_mask.astype(np.float32))
 
           image = crop_images(fil,ext="tiff",
                       isdir = False, output_size=(masks_image.shape[0],masks_image.shape[1]))

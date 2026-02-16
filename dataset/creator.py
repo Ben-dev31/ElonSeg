@@ -1,6 +1,5 @@
 
 import pathlib
-import shutil
 import logging
 from load_eloncam_data import *
 
@@ -9,6 +8,7 @@ class DatasetCreator:
                  annotation_path: str,
                  image_format: str = "tiff",
                  split_ratio: tuple = (0.6, 0.25, 0.15),
+                 mask_type: str = 'hsv',
                  **kwargs):
         
         self.dataset_path = dataset_path
@@ -16,6 +16,7 @@ class DatasetCreator:
         self.annotation_path = annotation_path
         self.image_format = image_format
         self.split_ratio = split_ratio
+        self.mask_type = mask_type
         self.annotation_path_dict = {}
 
         self._datas = []
@@ -72,7 +73,8 @@ class DatasetCreator:
         # This method can be implemented to create a dataset without relying on serial naming conventions
         _data = self._datas[:n_serial]
         train_data, val_data, test_data = self.split_data(data=_data)
-        
+        print(f"{'='*50}\nTrain data: {len(train_data)}, Val data: {len(val_data)}, Test data: {len(test_data)}")
+
         pathlib.Path(self.dataset_path).mkdir(parents=True, exist_ok=True)
         train_pt = pathlib.Path(self.dataset_path).joinpath("train")
         train_pt.mkdir(parents=True, exist_ok=True)
@@ -96,7 +98,7 @@ class DatasetCreator:
             save_dataset(train_data, self.dataset_path, 
                  groundtrue_files, 
                  self.annotation_path_dict[path],
-                 mask = 'hsv',
+                 mask = self.mask_type,
                  data_type = 'train')
         
         for path in  val_data:
@@ -106,7 +108,7 @@ class DatasetCreator:
             save_dataset(val_data, self.dataset_path, 
                  groundtrue_files, 
                  self.annotation_path_dict[path],
-                 mask = 'hsv',
+                 mask = self.mask_type,
                  data_type = 'val')
             
         for path in  test_data:
@@ -116,7 +118,7 @@ class DatasetCreator:
             save_dataset(test_data, self.dataset_path, 
                  groundtrue_files, 
                  self.annotation_path_dict[path],
-                 mask = 'hsv',
+                 mask = self.mask_type,
                  data_type = 'test')
         
     def crate_serial_dataset(self, n_serial: int = 10):
@@ -141,14 +143,16 @@ class DatasetCreator:
 
        
 if __name__ == "__main__":
-    dataset_path = "F:\Data_Eloncam\Dataset"  # This is where the final dataset will be created
+    dataset_path = "F:\Data_Eloncam\Dataset_mat5s"  # This is where the final dataset will be created
     data_path = "F:\Data_Eloncam\Data"
     annotation_path = "F:\Data_Eloncam\Analysed_data"
 
     creator = DatasetCreator(dataset_path, data_path, annotation_path, 
-                             exclude_dir=['outputs'])  # Exclude specific serials if needed
-    creator.create_no_serial_dataset(n_serial=10)  # or creator.create_no_serial_dataset(n_serial=10) for a non-serial dataset
+                             exclude_dir=['outputs'],split_ratio=(0.6, 0.2, 0.2),
+                             mask_type='map')  # Exclude specific serials if needed
+    creator.create_no_serial_dataset(n_serial=5)  # or creator.create_no_serial_dataset(n_serial=10) for a non-serial dataset
     print(f"Dataset created successfully at {dataset_path}")
+    print(f"Train data: {len(creator.train_data)}, Val data: {len(creator.val_data)}, Test data: {len(creator.test_data)}")
 
 
     

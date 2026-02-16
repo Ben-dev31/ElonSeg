@@ -182,10 +182,7 @@ def create_radius_map(path: str, isdir: bool = True, ext=".tiff", sigma = 2.5, s
 
     return mats
 
-def distance_map(path: str, 
-                 isdir: bool = True, 
-                 ext=".tiff", 
-                 save_path: str = None) -> list[np.ndarray]:
+def distance_map(img,) ->np.ndarray:
     """Compute the distance map of the binary image.
 
     Args:
@@ -196,37 +193,23 @@ def distance_map(path: str,
     Returns:
         list: List of distance maps or paths to saved distance maps.
     """
-    images = load_images(path, isdir=isdir, ext=ext)
-    
-    dist_maps = []
+    skeleton = extract_skeleton(img)
 
-    for idx, image in enumerate(tqdm(images, desc="Computing distance maps")):
-        skeleton = extract_skeleton(image)
+    skeleton = skeleton.astype(bool)
 
-        skeleton = skeleton.astype(bool)
+    # Distance euclidienne au squelette (0 sur le squelette)
+    D = distance_transform_edt(~skeleton)
 
-        # Distance euclidienne au squelette (0 sur le squelette)
-        D = distance_transform_edt(~skeleton)
+    # Normalisation (utile pour U-Net)
+    D = D / (D.max() + 1e-8)
 
-        # Normalisation (utile pour U-Net)
-        D = D / (D.max() + 1e-8)
-
-        if save_path is not None:
-            if not os.path.exists(save_path):
-                os.makedirs(save_path)
-            base_name = os.path.basename(path) if not isdir else os.path.basename(image)
-            save_fname = os.path.join(save_path, base_name)
-            imsave(save_fname, D.astype(np.float32))
-            dist_maps.append(save_fname)
-        else:
-            dist_maps.append(D)
-
-    return dist_maps
+    return D
 
 if __name__ == "__main__":
-    image_pth = "C:\\Users\\DELL\\Desktop\\Stage\\DATA\\Prepared_data\\Analysed_data\\Aker_10____1710191850_5B4_051.tiff"
+    image_pth = "Aker_10____1710201848_5B1_057.tiff"
 
-    D = distance_map(image_pth, isdir=False)[0]
+    img = imread(image_pth)
+    D = distance_map(img=img)
 
     #plt.plot(D[100, :])
     plt.imshow(D, cmap='gray')
