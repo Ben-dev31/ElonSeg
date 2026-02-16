@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-from mat import distance_map
+from .mat import distance_map
 
 def load_images_path(path:str, ext:str = "tiff"):
   """
