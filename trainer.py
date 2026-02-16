@@ -95,7 +95,7 @@ def run_tasks(**kwargs):
         logging.error("No existing dataset found. Please load data before training.")
         return
     
-    if Config.get("mode","binary") == "regression":
+    if Config["train_params"]["mode"] == "regression":
         print("Starting training with regression mode ...")
         run_map_train(root=Config.get("data_path", './data'),
                    epochs=Config.get("train_params", {}).get("epochs", 50),
