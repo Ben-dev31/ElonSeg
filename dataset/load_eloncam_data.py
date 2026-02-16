@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-from .mat import distance_map
+from mat import distance_map
 
 def load_images_path(path:str, ext:str = "tiff"):
   """
@@ -139,7 +139,7 @@ def save_dataset(image_paths: list, dest_image_path: str,groundtrue_files: list,
           for j, im in enumerate(imagette[4:-4]):
               if mask == 'hsv':
                   im_mask = get_mask_from_hsv(im)
-                  cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/masks/{name}_{j}.png"), im_mask)
+                  cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/masks/{name}_{j}.png"), im_mask.astype(np.uint8))
               elif mask == 'map':
                   im_mask = get_mask_from_map(im)
                   cv2.imwrite(os.path.join(dest_image_path, f"{data_type}/masks/{name}_{j}.tiff"), im_mask.astype(np.float32))
@@ -155,7 +155,7 @@ def save_dataset(image_paths: list, dest_image_path: str,groundtrue_files: list,
 def create_dataset(dest_path: str, image_path: str,
                     grundtruth_path:str, 
                     ext: str = ".tiff",
-                    test_size: float = 0.15,
+                    test_size: float = 0.2,
                     val_size: float = 0.3):
     
     """
@@ -180,25 +180,25 @@ def create_dataset(dest_path: str, image_path: str,
     save_dataset(trainset, dest_path, 
                  os.listdir(grundtruth_path), 
                  grundtruth_path,
-                 mask = 'hsv',
+                 mask = 'map',
                  data_type = 'train')
 
     save_dataset(valset, dest_path, 
                  os.listdir(grundtruth_path), 
                  grundtruth_path,
-                 mask = 'hsv',
+                 mask = 'map',
                  data_type = 'val')
 
     save_dataset(testset, dest_path, 
                  os.listdir(grundtruth_path),
                   grundtruth_path,
-                  mask = 'hsv',
+                  mask = 'map',
                   data_type = 'test')
     
 
 if __name__ == "__main__":
-    create_dataset(dest_path = './data',
-                   image_path = './eloncam_images',
-                   grundtruth_path = './eloncam_groundtruth',
+    create_dataset(dest_path = 'C:\\Users\\DELL\\Desktop\\Stage\\package\\dataset',
+                   image_path = 'C:\\Users\\DELL\\Desktop\\Stage\\package\\data\\brute',
+                   grundtruth_path = 'C:\\Users\\DELL\\Desktop\\Stage\\package\\data\\grund',
                    ext = ".tiff",
                    val_size=0.4)

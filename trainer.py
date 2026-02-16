@@ -3,10 +3,11 @@ import logging
 from config import Config, save_config, load_config
 import os, pathlib 
 from dataset.load_eloncam_data import *
-from metrics import dice_coeff, iou_score
+from metrics import dice_coeff, iou_score, mse, rmse, hausdorff_distance
 from train_model import run_full_train
 from model_test import run_prediction
 from plot_loss import plot_loss, load_loss_history
+from train_model_map import run_map_train
 
 
 def check_working_directory(ws_path: str):
@@ -94,8 +95,9 @@ def run_tasks(**kwargs):
         logging.error("No existing dataset found. Please load data before training.")
         return
     
-    print("Starting training...")
-    run_full_train(root=Config.get("data_path", './data'),
+    if Config.get("mode","binary") == "regression":
+        print("Starting training with regression mode ...")
+        run_map_train(root=Config.get("data_path", './data'),
                    epochs=Config.get("train_params", {}).get("epochs", 50),
                    batch_size=Config.get("train_params", {}).get("batch_size", 20),
                    train_dir=Config.get("train_path", './data/train'),
@@ -104,41 +106,58 @@ def run_tasks(**kwargs):
                     lr=Config.get("train_params", {}).get("learning_rate", 1e-4),
                    save_dir=Config.get("model_path", './model_checkpoints'),
                    history_path=os.path.join(ws_path, 'training_history.json'))
-
-    logging.info("Plotting training history...")
-    history = load_loss_history(os.path.join(ws_path, 'training_history.json'))
-    plot_loss(history[0], history[1],
+        
+        history = load_loss_history(os.path.join(ws_path, 'training_history.json'))
+        plot_loss(history[0], history[1],
               out_path=os.path.join(ws_path, 'loss_plot.png'),
-                metric_name='dice')
+                metric_name='SmoothL1 Loss')
+        logging.info("Running prediction and evaluation...")
+        run_prediction(
+            model_path=os.path.join(Config.get("model_path", './model_checkpoints'), 'unet_last_epoch.pth'),
+            images_dir=Config.get("test_images_dir", './data/test/images'),
+            out_masks_dir=os.path.join(ws_path, 'test_output2'),
+            target_size=tuple(Config.get("test_params", {}).get("target_size", (256, 256))),
+            threshold=Config.get("test_params", {}).get("threshold", 0.5),
+            history_path=os.path.join(ws_path, 'last_epoch_prediction_history.json'),
+            metrics={
+                'rmse': rmse,
+                'hausdorff': hausdorff_distance
+            }
+        )
     
+    else:
+        print("Starting training ...")
+        run_full_train(root=Config.get("data_path", './data'),
+                    epochs=Config.get("train_params", {}).get("epochs", 50),
+                    batch_size=Config.get("train_params", {}).get("batch_size", 20),
+                    train_dir=Config.get("train_path", './data/train'),
+                    val_dir=Config.get("val_path", './data/val'),
+                    target_size=Config.get("train_params", {}).get("target_size", (256, 256)),
+                        lr=Config.get("train_params", {}).get("learning_rate", 1e-4),
+                    save_dir=Config.get("model_path", './model_checkpoints'),
+                    history_path=os.path.join(ws_path, 'training_history.json'))
 
-    logging.info("Running prediction and evaluation...")
-    
-    run_prediction(
-        model_path=os.path.join(Config.get("model_path", './model_checkpoints'), 'unet_best.pth'),
-        images_dir=Config.get("test_images_dir", './data/test/images'),
-        out_masks_dir=os.path.join(ws_path, 'test_output'),
-        target_size=tuple(Config.get("test_params", {}).get("target_size", (256, 256))),
-        threshold=Config.get("test_params", {}).get("threshold", 0.5),
-        history_path=os.path.join(ws_path, 'best_prediction_history.json'),
-        metrics={
-            'dice': dice_coeff,
-            'iou': iou_score
-        }
-    )
-    run_prediction(
-        model_path=os.path.join(Config.get("model_path", './model_checkpoints'), 'unet_last_epoch.pth'),
-        images_dir=Config.get("test_images_dir", './data/test/images'),
-        out_masks_dir=os.path.join(ws_path, 'test_output2'),
-        target_size=tuple(Config.get("test_params", {}).get("target_size", (256, 256))),
-        threshold=Config.get("test_params", {}).get("threshold", 0.5),
-        history_path=os.path.join(ws_path, 'last_epoch_prediction_history.json'),
-        metrics={
-            'dice': dice_coeff,
-            'iou': iou_score
-        }
-    )
-    logging.info("Prediction and evaluation completed. Results saved to history.")
+        logging.info("Plotting training history...")
+        history = load_loss_history(os.path.join(ws_path, 'training_history.json'))
+        plot_loss(history[0], history[1],
+                out_path=os.path.join(ws_path, 'loss_plot.png'),
+                    metric_name='dice')
+        
+
+        logging.info("Running prediction and evaluation...")
+        
+        run_prediction(
+            model_path=os.path.join(Config.get("model_path", './model_checkpoints'), 'unet_last_epoch.pth'),
+            images_dir=Config.get("test_images_dir", './data/test/images'),
+            out_masks_dir=os.path.join(ws_path, 'test_output2'),
+            target_size=tuple(Config.get("test_params", {}).get("target_size", (256, 256))),
+            threshold=Config.get("test_params", {}).get("threshold", 0.5),
+            history_path=os.path.join(ws_path, 'last_epoch_prediction_history.json'),
+            metrics={
+                'dice': dice_coeff,
+                'iou': iou_score
+            }
+        )
 
     logging.info("All tasks completed.")
 
@@ -166,7 +185,8 @@ if __name__ == "__main__":
     parseur.add_argument('--dataset_src', type=str, default="./dataset",
                         help='Path to existing dataset (if any)')
     
-    
+    parseur.add_argument('--mode', type=str, default="binary", choices=["binary", "regression"],
+                        help='Path to existing dataset (if any)')
     
     args = parseur.parse_args()
     if args.eloncam_data != '':
@@ -176,5 +196,6 @@ if __name__ == "__main__":
     Config["train_params"]["epochs"] = args.epochs
     Config["train_params"]["batch_size"] = args.batch_size
     Config["train_params"]["learning_rate"] = args.learning_rate
+    Config["train_params"]["mode"] = args.mode
 
-    run_tasks(ws_path=args.ws_path, dataset_src=args.dataset_src)
+    run_tasks(ws_path=args.ws_path, dataset_src=args.dataset_src,)

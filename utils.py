@@ -51,11 +51,13 @@ class SegmentationDataset(Dataset):
     - masks: single-channel masks (0 background, 255 object) or multi-class index maps
     Both must have same filenames.
     """
-    def __init__(self, images_dir: str, masks_dir: str, transform=None, target_size: Optional[Tuple[int,int]] = None):
+    def __init__(self, images_dir: str, masks_dir: str, transform=None, target_size: Optional[Tuple[int,int]] = None, 
+                 mode='binary'):
         self.images_dir = Path(images_dir)
         self.masks_dir = Path(masks_dir) if masks_dir else None
         self.transform = transform
         self.target_size = target_size
+        self.mode = mode
         # only keep common image extensions
         valid_exts = {'.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp'}
         self.files = sorted([p.name for p in self.images_dir.iterdir() if p.is_file() and p.suffix.lower() in valid_exts])
@@ -97,8 +99,12 @@ class SegmentationDataset(Dataset):
             # resize mask using PIL nearest if required
             if self.target_size:
                 mask = mask.resize(self.target_size, resample=Image.NEAREST)
-            mask = np.array(mask, dtype=np.uint8)
-            mask = torch.from_numpy(mask).unsqueeze(0).float() / 255.0  # [0,1], shape [1,H,W]
+            if self.mode == 'regression':
+                mask = np.array(mask, dtype=np.float32)
+                mask = torch.from_numpy(mask).unsqueeze(0).float()  # [0,1], shape [1,H,W]
+            else:
+                mask = np.array(mask, dtype=np.uint8)
+                mask = torch.from_numpy(mask).unsqueeze(0).float() / 255.0  # [0,1], shape [1,H,W]
 
         return image, mask
     

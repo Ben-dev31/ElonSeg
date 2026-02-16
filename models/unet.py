@@ -239,7 +239,7 @@ class TrainableUNet:
             }, ckpt_path)
             
             # save best model based on minimum gap
-            if gap < best_gap:
+            if gap <= best_gap:
                 best_gap = gap
                 best_epoch = epoch + 1
                 best_ckpt_path = save_dir / "unet_best.pth"

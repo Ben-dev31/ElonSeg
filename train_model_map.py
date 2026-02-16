@@ -4,12 +4,11 @@ import torch
 from torch.utils.data import DataLoader
 from pathlib import Path
 from models.unet import UNet, TrainableUNet
-from metrics import DiceLoss
 from utils import SegmentationDataset
 import logging
 
 
-def run_full_train(root='./data', epochs=1, batch_size=2, lr=1e-4, device=None,
+def run_map_train(root='./data', epochs=1, batch_size=2, lr=1e-4, device=None,
                     train_dir: str = None, val_dir: str = None, target_size: tuple = (256, 256),
                     criterion=None, save_dir: str = "./model_checkpoints",
                     history_path: str = "training_history.json"):
@@ -30,16 +29,16 @@ def run_full_train(root='./data', epochs=1, batch_size=2, lr=1e-4, device=None,
     
     # datasets & loaders (resize to model input_size to avoid spatial mismatches)
     
-    train_ds = SegmentationDataset(str(train_imgs), str(train_masks), transform=None, target_size=target_size)
-    val_ds = SegmentationDataset(str(val_imgs), str(val_masks), transform=None, target_size=target_size)
+    train_ds = SegmentationDataset(str(train_imgs), str(train_masks), transform=None, target_size=target_size, mode="regression")
+    val_ds = SegmentationDataset(str(val_imgs), str(val_masks), transform=None, target_size=target_size, mode="regression")
 
     # safe on Windows
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=0)
 
     # model
-    model = UNet(device=device, input_size=target_size)
-    criterion = criterion or DiceLoss()
+    model = UNet(device=device, input_size=target_size,in_channels=3, out_channels=1)
+    criterion = criterion or torch.nn.SmoothL1Loss()
     model = TrainableUNet(model)
 
     try:
@@ -66,7 +65,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    run_full_train(root=args.root,
+    run_map_train(root=args.root,
                    epochs=args.epochs,
                    batch_size=args.batch_size,
                    device=args.device,

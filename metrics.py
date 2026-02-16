@@ -1,6 +1,8 @@
 
 import torch
 import torch.nn as nn
+from scipy.spatial.distance import directed_hausdorff
+import numpy as np
 
 def dice_coeff(pred: torch.Tensor, target: torch.Tensor, eps=1e-7, **kwargs):
     # pred and target are tensors with values in [0,1], shape [B,1,H,W]
@@ -71,3 +73,23 @@ class FocalLoss(nn.Module):
         probs = torch.sigmoid(logits)
         fl = focal_loss(probs, target, eps=self.eps)
         return fl
+
+def hausdorff_distance(pred, target):
+    # pred et target doivent être binaires
+    
+    pred_pts = np.argwhere(pred > 0)
+    target_pts = np.argwhere(target > 0)
+    
+    if len(pred_pts) == 0 or len(target_pts) == 0:
+        return np.inf
+    
+    hd1 = directed_hausdorff(pred_pts, target_pts)[0]
+    hd2 = directed_hausdorff(target_pts, pred_pts)[0]
+    
+    return max(hd1, hd2)
+
+def mse(pred, target):
+    return torch.mean((pred - target) ** 2)
+
+def rmse(pred, target):
+    return torch.sqrt(mse(pred, target))
