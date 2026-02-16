@@ -78,14 +78,18 @@ def run_tasks(**kwargs):
 
     ws_path = kwargs.get("ws_path", '.')
     check_working_directory(ws_path=ws_path)
+    
 
     if kwargs.get("dataset_src", None) is not None:
         Config["dataset_src"] = kwargs.get("dataset_src")
 
     exist_data = get_existing_data(dest_path= kwargs.get("dataset_src", ws_path + '/dataset'))
     if exist_data:
-        print("Existing dataset found. Skipping data loading.")
-        Config.update(load_config(os.path.join(ws_path, 'config.json')))
+        if pathlib.Path(ws_path).joinpath('config.json').exists():
+            print("Existing dataset found. Skipping data loading.")
+            Config.update(load_config(os.path.join(ws_path, 'config.json')))
+        else:
+            save_config(Config, os.path.join(ws_path, 'config.json'))
     else:
         logging.error("No existing dataset found. Please load data before training.")
         return
