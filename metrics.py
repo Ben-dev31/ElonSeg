@@ -74,7 +74,7 @@ class FocalLoss(nn.Module):
         fl = focal_loss(probs, target, eps=self.eps)
         return fl
 
-def hausdorff_distance(pred, target):
+def hausdorff_distance(pred, target, **kwargs):
     # pred et target doivent être binaires
     
     pred_pts = np.argwhere(pred > 0)
@@ -88,8 +88,8 @@ def hausdorff_distance(pred, target):
     
     return max(hd1, hd2)
 
-def mse(pred, target):
+def mse(pred, target, **kwargs):
     return torch.mean((pred - target) ** 2)
 
-def rmse(pred, target):
-    return torch.sqrt(mse(pred, target))
+def rmse(pred, target, **kwargs):
+    return torch.sqrt(mse(pred, target, **kwargs))
