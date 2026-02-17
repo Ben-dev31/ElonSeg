@@ -20,7 +20,8 @@ def run_prediction(model_path: str, images_dir: str,
                    target_size: Optional[Tuple[int,int]] = None,
                    metrics: Optional[dict] = None,
                    history_path: Optional[str] = "prediction_history.json",
-                   threshold: float = 0.5
+                   threshold: float = 0.5,
+                   mode: str = "binary"
                    ):
     device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f"Running prediction on device: {device}")
@@ -53,13 +54,22 @@ def run_prediction(model_path: str, images_dir: str,
         for i, (images, img_names) in enumerate(dataloader):
             images = images.to(device)
             logits = model(images)
-            probs = torch.sigmoid(logits)
-            preds = (probs > threshold).float()
+            if mode == "regression":
+                probs= logits  # in regression mode, output is already in [0,1]
+                preds = probs.cpu().numpy()  # [B,1,H,W] numpy array
+            else:
+                probs = torch.sigmoid(logits)
+                preds = (probs > threshold).float()
 
             for j in range(preds.shape[0]):
-                pred_mask = preds[j, 0].cpu().numpy() * 255
-                pred_img = Image.fromarray(pred_mask.astype(np.uint8))
-                pred_img.save(out_masks_dir / img_names[j])
+                if mode == "regression":
+                    pred_mask = (preds[j, 0].cpu().numpy()).astype(np.float32)
+                    pred_img = Image.fromarray(pred_mask.astype(np.float32))
+                    pred_img.save(out_masks_dir / img_names[j]+'.tiff')
+                else:
+                    pred_mask = preds[j, 0].cpu().numpy() * 255
+                    pred_img = Image.fromarray(pred_mask.astype(np.uint8))
+                    pred_img.save(out_masks_dir / img_names[j]+'.png')
     # Evaluate if ground-truth masks are available
     gt_masks_dir = Path(images_dir).parent / 'masks'
     if gt_masks_dir.exists():

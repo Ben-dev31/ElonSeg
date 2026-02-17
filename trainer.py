@@ -122,7 +122,8 @@ def run_tasks(**kwargs):
             metrics={
                 'rmse': rmse,
                 'hausdorff': hausdorff_distance
-            }
+            },
+            mode="regression"
         )
     
     else:
@@ -156,7 +157,8 @@ def run_tasks(**kwargs):
             metrics={
                 'dice': dice_coeff,
                 'iou': iou_score
-            }
+            },
+            mode="binary"
         )
 
     logging.info("All tasks completed.")
