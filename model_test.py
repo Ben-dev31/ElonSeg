@@ -65,11 +65,11 @@ def run_prediction(model_path: str, images_dir: str,
                 if mode == "regression":
                     pred_mask = preds[j, 0].astype(np.float32)
                     pred_img = Image.fromarray(pred_mask.astype(np.float32))
-                    pred_img.save(out_masks_dir / img_names[j]+'.tiff')
+                    pred_img.save(out_masks_dir / (img_names[j]+'.tiff'))
                 else:
                     pred_mask = preds[j, 0].cpu().numpy() * 255
                     pred_img = Image.fromarray(pred_mask.astype(np.uint8))
-                    pred_img.save(out_masks_dir / img_names[j]+'.png')
+                    pred_img.save(out_masks_dir / img_names[j])
     # Evaluate if ground-truth masks are available
     gt_masks_dir = Path(images_dir).parent / 'masks'
     if gt_masks_dir.exists():
