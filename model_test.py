@@ -63,7 +63,7 @@ def run_prediction(model_path: str, images_dir: str,
 
             for j in range(preds.shape[0]):
                 if mode == "regression":
-                    pred_mask = (preds[j, 0].cpu().numpy()).astype(np.float32)
+                    pred_mask = preds[j, 0].astype(np.float32)
                     pred_img = Image.fromarray(pred_mask.astype(np.float32))
                     pred_img.save(out_masks_dir / img_names[j]+'.tiff')
                 else:
