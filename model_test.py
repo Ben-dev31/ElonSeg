@@ -97,7 +97,8 @@ def evaluate_model(model_path: str,
                    target_size: Optional[Tuple[int,int]] = None,
                    metrics: Optional[dict] = None,
                    save_results: bool = True,
-                   history_path: Optional[str] = "loss_history.json"
+                   history_path: Optional[str] = "loss_history.json",
+                   mode: str = "binary"
                    ):
     """Evaluate model predictions against ground-truth masks.
 
@@ -137,7 +138,10 @@ def evaluate_model(model_path: str,
         for images, names in dataloader:
             images = images.to(device)
             logits = model(images)
-            probs = torch.sigmoid(logits)
+            if mode == "regression":
+                probs = logits  # in regression mode, output is already in [0,1]
+            else:
+                probs = torch.sigmoid(logits)
 
             # build target batch
             b = probs.shape[0]
