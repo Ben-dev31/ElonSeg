@@ -38,7 +38,7 @@ def run_map_train(root='./data', epochs=1, batch_size=2, lr=1e-4, device=None,
 
     # model
     model = UNet(device=device, input_size=target_size,in_channels=3, out_channels=1)
-    criterion = criterion or torch.nn.SmoothL1Loss()
+    criterion = criterion or torch.nn.SmoothL1Loss(beta=0.1, reduction='mean')
     model = TrainableUNet(model)
 
     try:
