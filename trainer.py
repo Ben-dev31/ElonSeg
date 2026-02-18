@@ -121,7 +121,6 @@ def run_tasks(**kwargs):
             history_path=os.path.join(ws_path, 'last_epoch_prediction_history.json'),
             metrics={
                 'rmse': rmse,
-                'hausdorff': hausdorff_distance
             },
             mode="regression"
         )
@@ -156,7 +155,8 @@ def run_tasks(**kwargs):
             history_path=os.path.join(ws_path, 'last_epoch_prediction_history.json'),
             metrics={
                 'dice': dice_coeff,
-                'iou': iou_score
+                'iou': iou_score,
+                'hausdorff': hausdorff_distance
             },
             mode="binary"
         )
@@ -200,4 +200,6 @@ if __name__ == "__main__":
     Config["train_params"]["learning_rate"] = args.learning_rate
     Config["train_params"]["mode"] = args.mode
 
-    run_tasks(ws_path=args.ws_path, dataset_src=args.dataset_src,)
+    run_tasks(ws_path=args.ws_path, dataset_src=args.dataset_src, mode=args.mode)
+
+    

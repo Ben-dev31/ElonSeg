@@ -1,8 +1,9 @@
 
 import torch
 import torch.nn as nn
-from scipy.spatial.distance import directed_hausdorff
 import numpy as np
+from scipy.ndimage import distance_transform_edt
+from scipy.ndimage import binary_erosion
 
 def dice_coeff(pred: torch.Tensor, target: torch.Tensor, eps=1e-7, **kwargs):
     # pred and target are tensors with values in [0,1], shape [B,1,H,W]
@@ -74,19 +75,52 @@ class FocalLoss(nn.Module):
         fl = focal_loss(probs, target, eps=self.eps)
         return fl
 
+
 def hausdorff_distance(pred, target, **kwargs):
-    # pred et target doivent être binaires
+    """
+    Docstring for hausdorff_distance HD95
     
-    pred_pts = np.argwhere(pred > 0)
-    target_pts = np.argwhere(target > 0)
+    :param pred: Description
+    :param target: Description
+    """
+    device = pred.device
     
-    if len(pred_pts) == 0 or len(target_pts) == 0:
-        return np.inf
+    pred = pred.detach().cpu().numpy()
+    target = target.detach().cpu().numpy()
     
-    hd1 = directed_hausdorff(pred_pts, target_pts)[0]
-    hd2 = directed_hausdorff(target_pts, pred_pts)[0]
+    B = pred.shape[0]
+    values = []
     
-    return max(hd1, hd2)
+    for b in range(B):
+        p = pred[b,0].astype(bool)
+        t = target[b,0].astype(bool)
+        
+        if not p.any() and not t.any():
+            values.append(0.0)
+            continue
+        
+        if not p.any() or not t.any():
+            H, W = p.shape
+            values.append(np.sqrt(H**2 + W**2))
+            continue
+        
+        # extract surface
+        p_surface = p ^ binary_erosion(p)
+        t_surface = t ^ binary_erosion(t)
+        
+        # distance maps
+        dt_p = distance_transform_edt(~p_surface)
+        dt_t = distance_transform_edt(~t_surface)
+        
+        distances = np.concatenate([
+            dt_t[p_surface],
+            dt_p[t_surface]
+        ])
+        
+        values.append(np.percentile(distances, 95))
+    
+    return torch.tensor(np.mean(values), dtype=torch.float32, device=device)
+
 
 def mse(pred, target, **kwargs):
     return torch.mean((pred - target) ** 2)
