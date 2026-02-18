@@ -65,7 +65,7 @@ def run_prediction(model_path: str, images_dir: str,
                 if mode == "regression":
                     pred_mask = preds[j, 0].astype(np.float32)
                     pred_img = Image.fromarray(pred_mask.astype(np.float32))
-                    pred_img.save(out_masks_dir / (img_names[j]+'.tiff'))
+                    pred_img.save(out_masks_dir / (img_names[j].replace('.png', '.tiff')))
                 else:
                     pred_mask = preds[j, 0].cpu().numpy() * 255
                     pred_img = Image.fromarray(pred_mask.astype(np.uint8))
@@ -165,19 +165,28 @@ def evaluate_model(model_path: str,
             targets = torch.stack(targets, dim=0).to(device)
 
             # compute metrics
-            if metrics is None or 'dice' in metrics:
+            if metrics is None:
                 dice = dice_coeff(probs, targets).item()
                 iou = iou_score(probs, targets, thr=threshold).item()
                 total_dice += dice * b
                 total_iou += iou * b
-                n += b
                 history['dice'] = history.get('dice', 0.0) + dice * b
                 history['iou'] = history.get('iou', 0.0) + iou * b
-
             else:
                 for metric_name, metric_fn in metrics.items():
-                    score = metric_fn(probs, targets, thr = threshold).item()
-                    history[metric_name] = history.get(metric_name, 0.0) + score * b
+                    if metric_name == 'dice':
+                        dice = dice_coeff(probs, targets).item()
+                        total_dice += dice * b
+                        history['dice'] = history.get('dice', 0.0) + dice * b
+
+                    elif metric_name == 'iou':
+                        iou = iou_score(probs, targets, thr=threshold).item()
+                        total_iou += iou * b
+                        history['iou'] = history.get('iou', 0.0) + iou * b
+                    else:
+                        score = metric_fn(probs, targets, thr = threshold).item()
+                        history[metric_name] = history.get(metric_name, 0.0) + score * b
+                    n += b
 
     for key in history:
         history[key] = history[key] / max(1, n) 
