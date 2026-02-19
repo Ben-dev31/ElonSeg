@@ -121,6 +121,7 @@ def run_tasks(**kwargs):
             history_path=os.path.join(ws_path, 'last_epoch_prediction_history.json'),
             metrics={
                 'rmse': rmse,
+                'mse': mse,
             },
             mode="regression"
         )

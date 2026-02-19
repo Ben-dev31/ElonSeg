@@ -6,6 +6,7 @@ import json
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
@@ -213,6 +214,7 @@ class TrainableUNet:
                 images = images.to(self.device, dtype=torch.float32)
                 masks = masks.to(self.device, dtype=torch.float32)
                 optimizer.zero_grad()
+                
                 outputs = self.model(images)
                 loss = criterion(outputs, masks)
                 loss.backward()

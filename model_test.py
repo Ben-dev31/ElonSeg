@@ -55,7 +55,7 @@ def run_prediction(model_path: str, images_dir: str,
             images = images.to(device)
             logits = model(images)
             if mode == "regression":
-                probs= logits  # in regression mode, output is already in [0,1]
+                probs= torch.clamp(logits, min=0, max=1)  # in regression mode, output is already in [0,1]
                 preds = probs.cpu().numpy()  # [B,1,H,W] numpy array
             else:
                 probs = torch.sigmoid(logits)
@@ -64,6 +64,12 @@ def run_prediction(model_path: str, images_dir: str,
             for j in range(preds.shape[0]):
                 if mode == "regression":
                     pred_mask = preds[j, 0].astype(np.float32)
+                    pred_img = Image.fromarray(pred_mask.astype(np.float32))
+                    # normalize to 0.0 - 1.0 range for saving as float TIFF
+                    max_val = np.asanyarray(pred_img.copy()).max()
+                    if max_val > 0:
+                        pred_mask = pred_mask / max_val
+                    # convert to float32 for saving as TIFF
                     pred_img = Image.fromarray(pred_mask.astype(np.float32))
                     pred_img.save(out_masks_dir / (img_names[j].replace('.png', '.tiff')))
                 else:
@@ -139,7 +145,7 @@ def evaluate_model(model_path: str,
             images = images.to(device)
             logits = model(images)
             if mode == "regression":
-                probs = logits  # in regression mode, output is already in [0,1]
+                probs = torch.clamp(logits, min=0, max=1)  # in regression mode, output is already in [0,1]
             else:
                 probs = torch.sigmoid(logits)
 
