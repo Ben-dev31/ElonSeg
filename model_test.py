@@ -192,7 +192,7 @@ def evaluate_model(model_path: str,
                     else:
                         score = metric_fn(probs, targets, thr = threshold).item()
                         history[metric_name] = history.get(metric_name, 0.0) + score * b
-                    n += b
+            n += b
 
     for key in history:
         history[key] = history[key] / max(1, n) 
