@@ -9,6 +9,9 @@ from PIL import Image
 from torch.utils.data import DataLoader,Dataset
 import numpy as np
 import json
+import os
+import cv2 
+from tifffile import imread
 
 def make_dirs(base):
     p = Path(base)
@@ -147,4 +150,51 @@ def save_in_history(history: dict, save_path: str):
         json.dump(existing, f, indent=4)
 
 
-    
+
+class DistanceMapDataset(Dataset):
+    def __init__(self, image_dir, mask_dir, target_size=(256,256)):
+        self.image_dir = image_dir
+        self.mask_dir = mask_dir
+        self.target_size = target_size
+
+        self.images = sorted(os.listdir(image_dir))
+        self.masks = sorted(os.listdir(mask_dir))
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        img_path = os.path.join(self.image_dir, self.images[idx])
+        mask_path = os.path.join(self.mask_dir, self.masks[idx])
+
+        # ---- IMAGE ----
+        image = cv2.imread(img_path)
+        if image is None:
+            print(f"Warning: Could not load image from {img_path}. Returning a black image.")
+            image = np.zeros((self.target_size[0], self.target_size[1], 3), dtype=np.float32)
+        else:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image = cv2.resize(image, self.target_size)
+
+        image = image.astype(np.float32) / 255.0
+        image = np.transpose(image, (2, 0, 1))  # HWC -> CHW
+
+        # ---- MASK (distance map) ----
+        try:
+            mask = imread(mask_path) # Open with PIL and convert to grayscale
+            mask = np.array(mask) # Convert PIL Image to NumPy array
+            # Corrected: cv2.resize expects (width, height), so we swap target_size dimensions
+            mask = cv2.resize(mask, (self.target_size[1], self.target_size[0]))
+        except Exception as e:
+            print(f"Warning: Could not load mask from {mask_path}: {e}")
+            mask = np.zeros(self.target_size, dtype=np.float32)
+
+        mask = mask.astype(np.float32)
+
+        # Normalisation obligatoire
+        if mask.max() > 0:
+            mask = mask / mask.max()
+
+        mask = np.expand_dims(mask, axis=0)
+
+        return torch.tensor(image), torch.tensor(mask)

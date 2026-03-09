@@ -26,6 +26,8 @@ class DatasetCreator:
 
         self.validate_data(exclude_dir=kwargs.get("exclude_dir", []))
 
+    def len_series(self):
+        return len(self._datas)
 
     def get_serial_data(self, pth: str = None, exclude_dir: list = []):
         path = pathlib.Path(pth)
@@ -44,17 +46,20 @@ class DatasetCreator:
     def validate_data(self, exclude_dir: list = []):
         brut_data = self.get_serial_data(pth=self.data_path)
         analysed_data = self.get_serial_data(pth=self.annotation_path, exclude_dir=exclude_dir)
+        funding = 0
+        missing = 0
         for d in brut_data:
             for an in [f for f in analysed_data]:
                 if d.name == an.name:
                     self.annotation_path_dict[d] = pathlib.Path(self.annotation_path) / an
                     self._datas.append(d)
+                    funding += 1
                     break
                 else:
-                    logging.warning(f"No corresponding annotation found for {d}")
+                    missing += 1
+                    #logging.info(f"No corresponding annotation found for {d}")
         
-        logging.info(f"Found {len(self._datas)} valid data folders with corresponding annotations.")
-                
+        logging.info(f"Found {funding} matching pairs and {missing} missing annotations.")
     
     def split_data(self, data: list = None):
         if data is None:
@@ -143,16 +148,20 @@ class DatasetCreator:
 
        
 if __name__ == "__main__":
-    dataset_path = "F:\Data_Eloncam\Dataset_mat5s"  # This is where the final dataset will be created
-    data_path = "F:\Data_Eloncam\Data"
-    annotation_path = "F:\Data_Eloncam\Analysed_data"
+    dataset_path = "D:\\Betterave\\Dataset_mask"  # This is where the final dataset will be created
+    data_path = "D:\\Betterave\\Data_Eloncam\\Data"
+    annotation_path = "D:\\Betterave\\Data_Eloncam\\Analysed_data"
+
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     creator = DatasetCreator(dataset_path, data_path, annotation_path, 
                              exclude_dir=['outputs'],split_ratio=(0.6, 0.2, 0.2),
-                             mask_type='map')  # Exclude specific serials if needed
-    creator.create_no_serial_dataset(n_serial=5)  # or creator.create_no_serial_dataset(n_serial=10) for a non-serial dataset
+                             mask_type='hsv')  # Exclude specific serials if needed
+
+
+    
+    creator.create_no_serial_dataset(n_serial=20)  # or creator.create_no_serial_dataset(n_serial=10) for a non-serial dataset
     print(f"Dataset created successfully at {dataset_path}")
     print(f"Train data: {len(creator.train_data)}, Val data: {len(creator.val_data)}, Test data: {len(creator.test_data)}")
-
 
     

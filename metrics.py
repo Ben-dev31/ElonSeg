@@ -5,25 +5,7 @@ import numpy as np
 from scipy.ndimage import distance_transform_edt
 from scipy.ndimage import binary_erosion
 
-def dice_coeff(pred: torch.Tensor, target: torch.Tensor, eps=1e-7, **kwargs):
-    # pred and target are tensors with values in [0,1], shape [B,1,H,W]
-    B = pred.shape[0]
-    pred_flat = pred.view(B, -1)
-    target_flat = target.view(B, -1)
-    intersection = (pred_flat * target_flat).sum(dim=1)
-    union = pred_flat.sum(dim=1) + target_flat.sum(dim=1)
-    dice = (2. * intersection + eps) / (union + eps)
-    return dice.mean()
 
-class DiceLoss(nn.Module):
-    def __init__(self, eps=1e-7):
-        super().__init__()
-        self.eps = eps
-    def forward(self, logits, target):
-        # logits: raw (not sigmoid). target in {0,1}
-        probs = torch.sigmoid(logits)
-        dice = dice_coeff(probs, target, eps=self.eps)
-        return 1.0 - dice
 
 def iou_score(pred: torch.Tensor, target: torch.Tensor, thr=0.5, eps=1e-7, **kwargs):
     thr = kwargs.get('threshold', thr)
@@ -65,15 +47,17 @@ def focal_loss(logits: torch.Tensor, target: torch.Tensor, alpha=0.25, gamma=2.0
     loss = focal_weight * bce
     return loss.mean()
 
-class FocalLoss(nn.Module):
-    def __init__(self, eps=1e-7):
-        super().__init__()
-        self.eps = eps
-    def forward(self, logits, target):
-        # logits: raw (not sigmoid). target in {0,1}
-        probs = torch.sigmoid(logits)
-        fl = focal_loss(probs, target, eps=self.eps)
-        return fl
+def dice_coeff(pred: torch.Tensor, target: torch.Tensor, eps=1e-7, **kwargs):
+    # pred and target are tensors with values in [0,1], shape [B,1,H,W]
+    B = pred.shape[0]
+    pred_flat = pred.view(B, -1)
+    target_flat = target.view(B, -1)
+    intersection = (pred_flat * target_flat).sum(dim=1)
+    union = pred_flat.sum(dim=1) + target_flat.sum(dim=1)
+    dice = (2. * intersection + eps) / (union + eps)
+    return dice.sum()
+
+
 
 
 def hausdorff_distance(pred, target, **kwargs):
@@ -122,8 +106,13 @@ def hausdorff_distance(pred, target, **kwargs):
     return torch.tensor(np.mean(values), dtype=torch.float32, device=device)
 
 
-def mse(pred, target, **kwargs):
-    return torch.mean((pred - target) ** 2)
+def mae(pred, target):
+    return torch.mean(torch.abs(pred - target))
 
-def rmse(pred, target, **kwargs):
-    return torch.sqrt(mse(pred, target, **kwargs))
+def rmse(pred, target):
+    return torch.sqrt(torch.mean((pred - target) ** 2))
+
+def r2_score(pred, target):
+    ss_res = torch.sum((target - pred) ** 2)
+    ss_tot = torch.sum((target - torch.mean(target)) ** 2)
+    return 1 - ss_res / (ss_tot + 1e-8)
